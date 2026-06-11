@@ -9,11 +9,9 @@ import { notFound, errorHandler } from './middleware/errorMiddleware.js';
 import productRoutes from './routes/productRoutes.js';
 import predictionRoutes from './routes/predictionRoute.js';
 import alertRoutes from './routes/alertRoutes.js';
+import { startScheduler } from './utils/scheduler.js';
 
 dns.setServers(['8.8.8.8', '1.1.1.1']);
-
-// connect to database
-connectDB();
 
 const app = express();
 
@@ -40,6 +38,10 @@ app.use(errorHandler);
 const PORT = process.env.PORT || 5000;
 
 // start server
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+connectDB().then(() => {
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+  });
+
+  startScheduler();
 });
