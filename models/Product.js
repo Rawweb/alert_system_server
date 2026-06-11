@@ -17,7 +17,7 @@ const productSchema = new mongoose.Schema(
     category: {
       type: String,
       required: [true, 'Category is required'],
-      enum: CATEGORIES, 
+      enum: CATEGORIES,
     },
     manufacturer: {
       type: String,
@@ -42,6 +42,12 @@ const productSchema = new mongoose.Schema(
       required: [true, 'Storage location is required'],
       trim: true,
     },
+    
+    batchNumber: {
+      type: String,
+      required: [true, 'Batch number is required'],
+      trim: true,
+    },
     // Filled in later by the machine learning prediction module.
     // Until a prediction runs, a product is simply 'unclassified'.
     riskStatus: {
@@ -56,6 +62,11 @@ const productSchema = new mongoose.Schema(
     },
   },
   { timestamps: true },
+);
+
+productSchema.index(
+  { name: 1, manufacturer: 1, batchNumber: 1 },
+  { unique: true },
 );
 
 const Product = mongoose.model('Product', productSchema);

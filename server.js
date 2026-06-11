@@ -7,6 +7,7 @@ import connectDB from './config/db.js';
 import dns from 'dns';
 import authRoutes from './routes/authRoutes.js';
 import { notFound, errorHandler } from './middleware/errorMiddleware.js';
+import productRoutes from './routes/productRoutes.js';
 
 dns.setServers(['8.8.8.8', '1.1.1.1']);
 
@@ -27,6 +28,7 @@ app.get('/api/health', (req, res) => {
 
 // real routes
 app.use('/api/auth', authRoutes);
+app.use('/api/products', productRoutes);
 
 // error handling middleware (must come after all routes)
 app.use(notFound);

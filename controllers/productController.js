@@ -13,9 +13,10 @@ export const createProduct = async (req, res, next) => {
       expiryDate,
       quantity,
       storageLocation,
+      batchNumber,
     } = req.body;
 
-    // ---- Validation: all fields are required ----
+    // Validation: all fields are required
     if (
       !name ||
       !category ||
@@ -23,15 +24,16 @@ export const createProduct = async (req, res, next) => {
       !manufacturingDate ||
       !expiryDate ||
       quantity === undefined ||
-      !storageLocation
+      !storageLocation ||
+      !batchNumber
     ) {
       return res.status(400).json({
         message:
-          'All fields are required: name, category, manufacturer, manufacturingDate, expiryDate, quantity, storageLocation',
+          'All fields are required: name, category, manufacturer, manufacturingDate, expiryDate, quantity, storageLocation, batchNumber',
       });
     }
 
-    // ---- Validation: expiry must come AFTER manufacturing ----
+    // Validation: expiry must come AFTER manufacturing date, not before or on the same day
     // new Date(...) turns the text "2026-08-01" into a real Date
     // object so the two can be compared with < and >
     const madeOn = new Date(manufacturingDate);
@@ -43,6 +45,19 @@ export const createProduct = async (req, res, next) => {
       });
     }
 
+    // check existing product by name, manufacturer, and batch number to prevent duplicates
+    const existingProduct = await Product.findOne({
+      name,
+      manufacturer,
+      batchNumber,
+    });
+
+    if (existingProduct) {
+      return res.status(409).json({
+        message: 'This product batch already exists',
+      });
+    }
+
     const product = await Product.create({
       name,
       category,
@@ -51,10 +66,17 @@ export const createProduct = async (req, res, next) => {
       expiryDate,
       quantity,
       storageLocation,
+      batchNumber,
       createdBy: req.user._id, // The logged-in admin, from protect
     });
 
-    res.status(201).json(product);
+    const totalProducts = await Product.countDocuments();
+
+    res.status(201).json({
+      message: 'Product created successfully',
+      totalProducts,
+      product,
+    });
   } catch (error) {
     next(error);
   }
@@ -77,7 +99,10 @@ export const getProducts = async (req, res, next) => {
     // Soonest-expiring products first, the most urgent ones on top
     const products = await Product.find(filter).sort({ expiryDate: 1 });
 
-    res.status(200).json(products);
+    res.status(200).json({
+      total: products.length,
+      products,
+    });
   } catch (error) {
     next(error);
   }
@@ -120,7 +145,7 @@ export const updateProduct = async (req, res, next) => {
     product.expiryDate = req.body.expiryDate ?? product.expiryDate;
     product.quantity = req.body.quantity ?? product.quantity;
     product.storageLocation = req.body.storageLocation ?? product.storageLocation;
-
+    product.batchNumber = req.body.batchNumber ?? product.batchNumber;
     // Re-check the date rule, because either date may have changed
     if (new Date(product.expiryDate) <= new Date(product.manufacturingDate)) {
       return res.status(400).json({
@@ -128,8 +153,24 @@ export const updateProduct = async (req, res, next) => {
       });
     }
 
+    const duplicateProduct = await Product.findOne({
+      name: product.name,
+      manufacturer: product.manufacturer,
+      batchNumber: product.batchNumber,
+      _id: { $ne: product._id },
+    });
+
+    if (duplicateProduct) {
+      return res.status(409).json({
+        message: 'Another product with this name, manufacturer or batch number already exists',
+      });
+    }
+
     const updatedProduct = await product.save();
-    res.status(200).json(updatedProduct);
+    res.status(200).json({
+      message: 'Product updated successfully',
+      product: updatedProduct,
+    });
   } catch (error) {
     next(error);
   }
