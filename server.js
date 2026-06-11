@@ -10,6 +10,7 @@ import productRoutes from './routes/productRoutes.js';
 import predictionRoutes from './routes/predictionRoute.js';
 import alertRoutes from './routes/alertRoutes.js';
 import { startScheduler } from './utils/scheduler.js';
+import reportRoutes from './routes/reportRoutes.js';
 
 dns.setServers(['8.8.8.8', '1.1.1.1']);
 
@@ -30,6 +31,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/predictions', predictionRoutes);
 app.use('/api/alerts', alertRoutes);
+app.use('/api/reports', reportRoutes);
 
 // error handling middleware (must come after all routes)
 app.use(notFound);
