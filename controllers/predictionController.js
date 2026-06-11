@@ -1,4 +1,5 @@
 import Product from '../models/Product.js';
+import Alert from '../models/Alert.js';
 
 // @desc    Run ML prediction on all products and save risk statuses
 // @route   POST /api/predictions/run
@@ -36,6 +37,7 @@ export const runPrediction = async (req, res, next) => {
 
     const data = await mlResponse.json();
     const summary = { expired: 0, critical: 0, warning: 0, safe: 0 };
+    let alertsCreated = 0;
 
     for (const result of data.results) {
       await Product.updateOne(
@@ -44,11 +46,48 @@ export const runPrediction = async (req, res, next) => {
       );
 
       summary[result.riskStatus] = summary[result.riskStatus] + 1;
+
+      // Alert generation: only the dangerous categories
+      if (
+        result.riskStatus === 'critical' ||
+        result.riskStatus === 'expired' ||
+        result.riskStatus === 'warning'
+      ) {
+        const existingAlert = await Alert.findOne({
+          product: result.id,
+          riskStatus: result.riskStatus,
+          isRead: false,
+        });
+
+        if (!existingAlert) {
+          // Fetch the product's name to build a readable message
+          const product = await Product.findById(result.id).select('name batchNumber');
+
+          let message = '';
+          if (result.riskStatus === 'expired') {
+            message = `${product.name} (batch ${product.batchNumber}) expired ${Math.abs(result.daysToExpiry)} day(s) ago. Remove it from inventory.`;
+          } else if (result.riskStatus === 'critical') {
+            message = `${product.name} (batch ${product.batchNumber}) expires in ${result.daysToExpiry} day(s). Take action now.`;
+          } else {
+            message = `${product.name} (batch ${product.batchNumber}) expires in ${result.daysToExpiry} day(s). Plan ahead.`;
+          }
+
+          await Alert.create({
+            product: result.id,
+            riskStatus: result.riskStatus,
+            daysToExpiry: result.daysToExpiry,
+            message,
+          });
+
+          alertsCreated = alertsCreated + 1;
+        }
+      }
     }
 
     res.status(200).json({
       message: 'Prediction completed successfully',
       totalProductsClassified: data.results.length,
+      alertsCreated,
       summary,
     });
   } catch (error) {

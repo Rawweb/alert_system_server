@@ -1,5 +1,5 @@
 import express from 'express';
-import { runPrediction } from '../controllers/predictController.js';
+import { runPrediction } from '../controllers/predictionController.js';
 import { protect } from '../middleware/authMiddleware.js';
 
 const router = express.Router();

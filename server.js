@@ -9,6 +9,7 @@ import authRoutes from './routes/authRoutes.js';
 import { notFound, errorHandler } from './middleware/errorMiddleware.js';
 import productRoutes from './routes/productRoutes.js';
 import predictionRoutes from './routes/predictionRoute.js';
+import alertRoutes from './routes/alertRoutes.js';
 
 dns.setServers(['8.8.8.8', '1.1.1.1']);
 
@@ -31,6 +32,8 @@ app.get('/api/health', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/predictions', predictionRoutes);
+app.use('/api/alerts', alertRoutes);
+
 // error handling middleware (must come after all routes)
 app.use(notFound);
 app.use(errorHandler);
