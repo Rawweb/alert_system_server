@@ -1,5 +1,7 @@
 import Product from '../models/Product.js';
 import Alert from '../models/Alert.js';
+import sendEmail from '../utils/sendEmail.js';
+import { alertSummaryTemplate } from '../utils/emailTemplate.js';
 
 // @desc    Run ML prediction on all products and save risk statuses
 // @route   POST /api/predictions/run
@@ -38,6 +40,7 @@ export const runPrediction = async (req, res, next) => {
     const data = await mlResponse.json();
     const summary = { expired: 0, critical: 0, warning: 0, safe: 0 };
     let alertsCreated = 0;
+    const emailItems = []; // collects { message, riskStatus } per new alert
 
     for (const result of data.results) {
       await Product.updateOne(
@@ -80,14 +83,26 @@ export const runPrediction = async (req, res, next) => {
           });
 
           alertsCreated = alertsCreated + 1;
+          emailItems.push({ message: message, riskStatus: result.riskStatus });
         }
       }
+    }
+
+    // Email: one summary per run, only when something is new
+    let emailSent = false;
+
+    if (alertsCreated > 0) {
+      emailSent = await sendEmail({
+        subject: `Expiry Alert: ${alertsCreated} product(s) need attention`,
+        html: alertSummaryTemplate(emailItems),
+      });
     }
 
     res.status(200).json({
       message: 'Prediction completed successfully',
       totalProductsClassified: data.results.length,
       alertsCreated,
+      emailSent,
       summary,
     });
   } catch (error) {

@@ -135,6 +135,10 @@ export const updateProduct = async (req, res, next) => {
     if (!product) {
       return res.status(404).json({ message: 'Product not found' });
     }
+    
+    if (req.body.expiryDate !== undefined || req.body.manufacturingDate !== undefined) {
+      product.riskStatus = 'unclassified';
+    }
 
     // For each field: if the request included it, use the new value.
     // If not, keep what the product already had.
