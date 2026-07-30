@@ -7,7 +7,7 @@ import dns from 'dns';
 import authRoutes from './routes/authRoutes.js';
 import { notFound, errorHandler } from './middleware/errorMiddleware.js';
 import productRoutes from './routes/productRoutes.js';
-import predictionRoutes from './routes/predictionRoute.js';
+import predictionRoutes from './routes/predictionRoutes.js';
 import alertRoutes from './routes/alertRoutes.js';
 // import { startScheduler } from './utils/scheduler.js';
 import reportRoutes from './routes/reportRoutes.js';
