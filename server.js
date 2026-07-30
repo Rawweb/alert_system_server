@@ -9,14 +9,19 @@ import { notFound, errorHandler } from './middleware/errorMiddleware.js';
 import productRoutes from './routes/productRoutes.js';
 import predictionRoutes from './routes/predictionRoute.js';
 import alertRoutes from './routes/alertRoutes.js';
-import { startScheduler } from './utils/scheduler.js';
+// import { startScheduler } from './utils/scheduler.js';
 import reportRoutes from './routes/reportRoutes.js';
 
 dns.setServers(['8.8.8.8', '1.1.1.1']);
 
 const app = express();
 
-app.use(cors());
+app.use(
+  cors({
+    origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+    credentials: true,
+  }),
+);
 app.use(express.json());
 
 // test route
@@ -45,5 +50,6 @@ connectDB().then(() => {
     console.log(`Server running on port ${PORT}`);
   });
 
-  startScheduler();
+  console.log(`ML service URL: ${process.env.ML_SERVICE_URL}`);
+  // startScheduler();
 });
