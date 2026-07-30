@@ -6,7 +6,7 @@ import {
   updateProduct,
   deleteProduct,
 } from '../controllers/productController.js';
-import { protect } from '../middleware/authMiddleware.js';
+import { protect, authorize } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
@@ -14,10 +14,10 @@ const router = express.Router();
 // protect to ALL routes declared below it in this file.
 router.use(protect);
 
-router.post('/', createProduct);
+router.post('/', authorize('admin'), createProduct);
 router.get('/', getProducts);
 router.get('/:id', getProductById);
-router.patch('/:id', updateProduct);
-router.delete('/:id', deleteProduct);
+router.patch('/:id', authorize('admin'), updateProduct);
+router.delete('/:id', authorize('admin'), deleteProduct);
 
 export default router;
